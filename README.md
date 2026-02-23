@@ -11,6 +11,17 @@
 - ✅ 一键生成截图到剪贴板
 - ✅ 支持 Windows 右键菜单集成
 
+## 下载使用
+
+前往 [Releases](https://github.com/xiaoxuvip/Audio-Calculator/releases) 页面下载，提供两个版本：
+
+| 文件名 | 说明 | 体积 | 是否需要 .NET 运行时 |
+|--------|------|------|---------------------|
+| `AudioCalculator_v1.6.0_lite.exe` | 轻量版 | 较小 | 需要安装 [.NET 8 运行时](https://dotnet.microsoft.com/download/dotnet/8.0) |
+| `AudioCalculator_v1.6.0_full.exe` | 完整版 | 较大 | 无需安装，开箱即用 |
+
+> 不确定选哪个？推荐下载完整版（full），双击即可运行，无需额外安装任何依赖。
+
 ## 使用方法
 
 ### 方式一：直接运行
@@ -27,14 +38,14 @@
 
 ## 编译方法
 
-需要 .NET 8 SDK
+需要 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 ```bash
-# 编译
-dotnet build -c Release
+# 编译轻量版（需要目标机器安装 .NET 8 运行时）
+dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o publish-lite
 
-# 发布独立版本（无需安装 .NET 运行时）
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+# 编译完整版（内置运行时，开箱即用）
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish-full
 ```
 
 ## 注册/移除右键菜单
