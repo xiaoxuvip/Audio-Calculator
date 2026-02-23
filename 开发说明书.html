@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音频时长统计与结算 — 开发说明书</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#1a1a2e;line-height:1.7}
+.top-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:linear-gradient(135deg,#6366F1,#8B5CF6,#EC4899);padding:16px 32px;box-shadow:0 4px 20px rgba(99,102,241,0.3)}
+.top-nav h1{color:#fff;font-size:22px;font-weight:700}
+.top-nav p{color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px}
+.sidebar{position:fixed;top:90px;left:0;bottom:0;width:260px;background:#fff;border-right:1px solid #e2e8f0;overflow-y:auto;padding:16px 0;z-index:50}
+.sidebar a{display:block;padding:8px 20px;color:#64748b;text-decoration:none;font-size:13px;border-left:3px solid transparent;transition:all .2s}
+.sidebar a:hover{background:#f1f5f9;color:#6366F1;border-left-color:#6366F1}
+.sidebar a.h2-link{font-weight:600;color:#334155;padding-left:20px}
+.sidebar a.h3-link{padding-left:36px;font-size:12px}
+.main{margin-left:260px;margin-top:90px;padding:32px 40px 80px;max-width:960px}
+h2{font-size:22px;font-weight:700;color:#1e293b;margin:48px 0 16px;padding-bottom:10px;border-bottom:3px solid #6366F1;display:inline-block}
+h2:first-of-type{margin-top:0}
+h3{font-size:17px;font-weight:600;color:#334155;margin:28px 0 12px;padding-left:12px;border-left:4px solid #8B5CF6}
+h4{font-size:15px;font-weight:600;color:#475569;margin:20px 0 8px}
+p{margin:8px 0;color:#475569}ul,ol{margin:8px 0 8px 24px;color:#475569}li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="top-nav">
+<h1>🎵 音频时长统计与结算 — 开发说明书</h1>
+<p>AudioCalculator 完整开发文档 · 版本修改 · 编译发布 · 架构说明</p>
+</div>
+<style>
+.code-block{position:relative;background:#1e293b;border-radius:10px;margin:12px 0;overflow:hidden}
+.code-header{display:flex;justify-content:space-between;align-items:center;background:#334155;padding:8px 16px;font-size:12px;color:#94a3b8}
+.code-header .lang{font-weight:600;color:#a5b4fc}
+.copy-btn{background:#475569;color:#e2e8f0;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;transition:all .2s}
+.copy-btn:hover{background:#6366F1;color:#fff}
+.copy-btn.copied{background:#10B981}
+pre{padding:16px;overflow-x:auto;font-size:13px;line-height:1.6;font-family:"Cascadia Code","Fira Code",Consolas,monospace;margin:0}
+pre code{color:#e2e8f0}
+code:not(pre code){background:#eef2ff;color:#4f46e5;padding:2px 6px;border-radius:4px;font-size:13px;font-family:"Cascadia Code",Consolas,monospace}
+table{width:100%;border-collapse:collapse;margin:12px 0;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+th{background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;padding:10px 14px;text-align:left;font-size:13px;font-weight:600}
+td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#475569}
+tr:hover td{background:#f8fafc}
+.tip{padding:14px 18px;border-radius:8px;margin:14px 0;font-size:13px;line-height:1.6}
+.tip-warning{background:#fffbeb;border-left:4px solid #f59e0b;color:#92400e}
+.tip-info{background:#eef2ff;border-left:4px solid #6366F1;color:#3730a3}
+.tip-success{background:#ecfdf5;border-left:4px solid #10b981;color:#065f46}
+.tip-danger{background:#fef2f2;border-left:4px solid #ef4444;color:#991b1b}
+.tip strong{display:block;margin-bottom:4px}
+.card{background:#fff;border-radius:10px;padding:20px;margin:14px 0;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.steps{counter-reset:step;list-style:none;margin-left:0;padding-left:0}
+.steps li{counter-increment:step;position:relative;padding:12px 0 12px 48px;border-left:2px solid #e2e8f0;margin-left:16px}
+.steps li:last-child{border-left-color:transparent}
+.steps li::before{content:counter(step);position:absolute;left:-14px;top:10px;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.file-tree{background:#1e293b;border-radius:10px;padding:20px;font-family:"Cascadia Code",Consolas,monospace;font-size:13px;color:#e2e8f0;line-height:1.8;overflow-x:auto;margin:12px 0;white-space:pre}
+h2[id],h3[id]{scroll-margin-top:110px}
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:0;padding:20px}}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+</style>
+
+<div class="sidebar">
+<a href="#sec1" class="h2-link">一、项目基本信息</a>
+<a href="#sec2" class="h2-link">二、版本号修改（3个位置）</a>
+<a href="#sec2-1" class="h3-link">2.1 MainWindow.xaml.cs</a>
+<a href="#sec2-2" class="h3-link">2.2 csproj 项目文件</a>
+<a href="#sec2-3" class="h3-link">2.3 修改检查清单</a>
+<a href="#sec3" class="h2-link">三、编译命令详解</a>
+<a href="#sec3-1" class="h3-link">3.1 前置条件</a>
+<a href="#sec3-2" class="h3-link">3.2 编译轻量版</a>
+<a href="#sec3-3" class="h3-link">3.3 编译完整版</a>
+<a href="#sec3-4" class="h3-link">3.4 手把手执行步骤</a>
+<a href="#sec3-5" class="h3-link">3.5 版本对比</a>
+<a href="#sec4" class="h2-link">四、项目目录结构</a>
+<a href="#sec5" class="h2-link">五、常见参数修改</a>
+<a href="#sec6" class="h2-link">六、UI 样式修改</a>
+<a href="#sec7" class="h2-link">七、NuGet 依赖包</a>
+<a href="#sec8" class="h2-link">八、完整发版流程</a>
+<a href="#sec9" class="h2-link">九、常见问题 FAQ</a>
+<a href="#sec10" class="h2-link">十、关键文件速查表</a>
+</div>
+
+<div class="main">
+
+<h2 id="sec1">一、项目基本信息</h2>
+<table>
+<tr><th style="width:160px">项目</th><th>说明</th></tr>
+<tr><td>项目名称</td><td>AudioCalculator（音频时长统计与结算）</td></tr>
+<tr><td>技术栈</td><td>C# / WPF / .NET 8.0</td></tr>
+<tr><td>架构模式</td><td>Code-Behind（单窗口工具，无 MVVM）</td></tr>
+<tr><td>项目文件</td><td><code>AudioCalculator/AudioCalculator.csproj</code></td></tr>
+<tr><td>目标框架</td><td><code>net8.0-windows</code></td></tr>
+<tr><td>主要依赖</td><td>TagLibSharp（音频元数据读取）</td></tr>
+<tr><td>配置文件存储</td><td><code>%APPDATA%/AudioCalculator/settings.json</code></td></tr>
+<tr><td>核心功能</td><td>统计音频文件总时长、按小时/分钟计费、截图到剪贴板、右键菜单集成</td></tr>
+</table>
+
+<h2 id="sec2">二、软件标题和版本号 — 修改位置汇总</h2>
+
+<div class="tip tip-danger">
+<strong>⚠️ 重要：修改版本号时，以下位置必须同步修改！</strong>
+本项目的版本号定义在 <code>MainWindow.xaml.cs</code> 的常量中，标题栏通过代码动态拼接。
+</div>
+
+<h3 id="sec2-1">2.1 <code>MainWindow.xaml.cs</code> — 版本号常量 + 标题拼接</h3>
+<p><strong>文件路径：</strong><code>AudioCalculator/MainWindow.xaml.cs</code></p>
+<p><strong>作用：</strong>版本号常量定义，以及窗口标题的动态拼接逻辑。</p>
+<p><strong>如何找到：</strong>搜索 <code>Version =</code>，大约第 20 行。</p>
+
+<div class="code-block">
+<div class="code-header"><span class="lang">C# — MainWindow.xaml.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>// 第 20 行左右 — 版本号常量（⭐ 改这里）
+public const string Version = "1.6";
+
+// 构造函数中 — 标题栏动态拼接（根据编译版本类型）
+#if EDITION_FULL
+    Title = $"音频时长统计与结算 完整版 v{Version} BY:Xiaoxu";
+#elif EDITION_LITE
+    Title = $"音频时长统计与结算 轻量版 v{Version} BY:Xiaoxu";
+#else
+    Title = $"音频时长统计与结算 v{Version} BY:Xiaoxu";
+#endif</code></pre>
+</div>
+
+<div class="tip tip-info">
+<strong>💡 提示</strong>
+本项目的标题栏是通过代码动态生成的（不像 SilenceAnalyzer 那样在 XAML 中硬编码），所以只需要改 <code>Version</code> 常量，标题会自动更新。
+</div>
+
+<h3 id="sec2-2">2.2 <code>AudioCalculator.csproj</code> — 项目编译版本号</h3>
+<p><strong>文件路径：</strong><code>AudioCalculator/AudioCalculator.csproj</code></p>
+<p><strong>如何找到：</strong>搜索 <code>&lt;Version&gt;</code></p>
+
+<div class="code-block">
+<div class="code-header"><span class="lang">XML — AudioCalculator.csproj</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>&lt;Version&gt;1.6.0&lt;/Version&gt;                          &lt;!-- 编译版本号（写入 exe 属性） --&gt;
+&lt;Authors&gt;Xiaoxu&lt;/Authors&gt;                           &lt;!-- 作者 --&gt;
+&lt;Description&gt;音频时长统计与结算工具&lt;/Description&gt;     &lt;!-- 产品描述 --&gt;</code></pre>
+</div>
+
+<h3 id="sec2-3">2.3 版本号修改检查清单</h3>
+<table>
+<tr><th>序号</th><th>文件</th><th>搜索关键词</th><th>说明</th></tr>
+<tr><td>1</td><td><code>MainWindow.xaml.cs</code></td><td><code>Version =</code></td><td>版本号常量（标题栏自动引用）</td></tr>
+<tr><td>2</td><td><code>AudioCalculator.csproj</code></td><td><code>&lt;Version&gt;</code></td><td>编译版本号（写入 exe 文件属性）</td></tr>
+</table>
+
+<h2 id="sec3">三、编译命令详解</h2>
+
+<h3 id="sec3-1">3.1 前置条件</h3>
+<div class="card">
+<ol class="steps">
+<li>安装 <code>.NET 8.0 SDK</code>（下载地址：<a href="https://dotnet.microsoft.com/download/dotnet/8.0" target="_blank">https://dotnet.microsoft.com/download/dotnet/8.0</a>）</li>
+<li>打开终端（PowerShell 或 CMD），输入 <code>dotnet --version</code> 确认安装成功</li>
+<li>进入项目根目录（包含 <code>AudioCalculator.csproj</code> 的文件夹）</li>
+</ol>
+</div>
+
+<div class="tip tip-warning">
+<strong>⚠️ 注意</strong>
+以下编译命令都是「一次性复制整段」粘贴到终端执行的，不需要逐行输入。每段命令就是一条完整的 <code>dotnet publish</code> 命令。
+</div>
+
+<h3 id="sec3-2">3.2 编译轻量版（Lite）</h3>
+<p>轻量版体积较小（约 1-2 MB），但运行时需要用户电脑已安装 .NET 8.0 运行时。</p>
+
+<h4>PowerShell 版本</h4>
+<div class="code-block">
+<div class="code-header"><span class="lang">PowerShell — 编译轻量版（一次性复制执行）</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>dotnet publish AudioCalculator.csproj `
+  -c Release `
+  -r win-x64 `
+  -p:PublishSingleFile=true `
+  -p:SelfContained=false `
+  -p:DefineConstants="EDITION_LITE" `
+  -o ./publish-lite</code></pre>
+</div>
+
+<h4>CMD 版本</h4>
+<div class="code-block">
+<div class="code-header"><span class="lang">CMD — 编译轻量版（一次性复制执行）</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>dotnet publish AudioCalculator.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:SelfContained=false -p:DefineConstants="EDITION_LITE" -o ./publish-lite</code></pre>
+</div>
+
+<h3 id="sec3-3">3.3 编译完整版（Full）</h3>
+<p>完整版自带 .NET 运行时，体积较大（约 60-80 MB），但用户无需安装任何依赖即可运行。</p>
+
+<h4>PowerShell 版本</h4>
+<div class="code-block">
+<div class="code-header"><span class="lang">PowerShell — 编译完整版（一次性复制执行）</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>dotnet publish AudioCalculator.csproj `
+  -c Release `
+  -r win-x64 `
+  -p:PublishSingleFile=true `
+  -p:SelfContained=true `
+  -p:IncludeNativeLibrariesForSelfExtract=true `
+  -p:DefineConstants="EDITION_FULL" `
+  -o ./publish-full</code></pre>
+</div>
+
+<h4>CMD 版本</h4>
+<div class="code-block">
+<div class="code-header"><span class="lang">CMD — 编译完整版（一次性复制执行）</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>dotnet publish AudioCalculator.csproj -c Release -r win-x64 -p:PublishSingleFile=true -p:SelfContained=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DefineConstants="EDITION_FULL" -o ./publish-full</code></pre>
+</div>
+
+<h3 id="sec3-4">3.4 手把手执行步骤</h3>
+<div class="card">
+<ol class="steps">
+<li>打开 PowerShell 或 CMD 终端</li>
+<li>进入项目目录：<code>cd 你的路径\AudioCalculator</code></li>
+<li>确认目录下有 <code>AudioCalculator.csproj</code> 文件</li>
+<li>复制上面的编译命令（整段复制），粘贴到终端，按回车执行</li>
+<li>等待编译完成，输出文件在 <code>publish-lite/</code> 或 <code>publish-full/</code> 目录中</li>
+<li>找到 <code>AudioCalculator.exe</code> 即为最终产物</li>
+</ol>
+</div>
+
+<h3 id="sec3-5">3.5 编译参数说明 &amp; 版本对比</h3>
+<table>
+<tr><th>参数</th><th>说明</th></tr>
+<tr><td><code>-c Release</code></td><td>使用 Release 配置编译（优化代码，去除调试信息）</td></tr>
+<tr><td><code>-r win-x64</code></td><td>目标平台为 Windows 64 位</td></tr>
+<tr><td><code>-p:PublishSingleFile=true</code></td><td>打包为单个 exe 文件</td></tr>
+<tr><td><code>-p:SelfContained=false</code></td><td>轻量版：不包含 .NET 运行时</td></tr>
+<tr><td><code>-p:SelfContained=true</code></td><td>完整版：包含 .NET 运行时</td></tr>
+<tr><td><code>-p:IncludeNativeLibrariesForSelfExtract=true</code></td><td>将原生库也打包进 exe</td></tr>
+<tr><td><code>-p:DefineConstants="EDITION_LITE"</code></td><td>定义编译常量，控制标题显示「轻量版」</td></tr>
+<tr><td><code>-p:DefineConstants="EDITION_FULL"</code></td><td>定义编译常量，控制标题显示「完整版」</td></tr>
+<tr><td><code>-o ./publish-lite</code></td><td>输出目录</td></tr>
+</table>
+
+<table>
+<tr><th>对比项</th><th>轻量版 (Lite)</th><th>完整版 (Full)</th></tr>
+<tr><td>文件大小</td><td>约 1-2 MB</td><td>约 60-80 MB</td></tr>
+<tr><td>需要 .NET 运行时</td><td>✅ 需要</td><td>❌ 不需要</td></tr>
+<tr><td>标题显示</td><td>音频时长统计与结算 轻量版 v1.6</td><td>音频时长统计与结算 完整版 v1.6</td></tr>
+<tr><td>适用场景</td><td>开发者 / 已装 .NET 的用户</td><td>普通用户分发</td></tr>
+</table>
+
+<h2 id="sec4">四、项目目录结构</h2>
+<div class="file-tree">AudioCalculator/
+├── AudioCalculator.csproj        # 项目文件（依赖、版本号、编译配置）
+├── App.xaml                      # 全局资源（颜色、画刷、按钮样式）
+├── App.xaml.cs                   # 应用入口（命令行参数处理、单实例逻辑）
+├── MainWindow.xaml               # 主窗口 UI 布局
+├── MainWindow.xaml.cs            # 主窗口逻辑（文件加载、计费、截图）
+├── SettingsWindow.xaml            # 设置窗口 UI
+├── SettingsWindow.xaml.cs         # 设置窗口逻辑（右键菜单管理）
+├── DonateWindow.xaml              # 打赏窗口 UI
+├── DonateWindow.xaml.cs           # 打赏窗口逻辑
+├── AppSettings.cs                 # 设置管理（JSON 读写、窗口位置记忆）
+├── logo.ico                       # 应用图标
+├── logo.png                       # Logo 图片
+├── sk.jpg                         # 微信收款码图片
+├── RegisterContextMenu.reg        # 注册右键菜单（注册表脚本）
+├── UnregisterContextMenu.reg      # 移除右键菜单（注册表脚本）
+├── publish-lite/                  # 轻量版编译输出
+├── publish-full/                  # 完整版编译输出
+├── rust-version/                  # Rust 版本（独立实现）
+│   ├── Cargo.toml                 # Rust 项目配置
+│   ├── src/main.rs                # Rust 源码
+│   └── build.rs                   # Rust 构建脚本
+└── website/                       # 官网页面
+    └── index.html                 # 产品介绍页</div>
+
+<h2 id="sec5">五、常见参数修改</h2>
+
+<h3>5.1 设置文件存储路径</h3>
+<p><strong>文件：</strong><code>AppSettings.cs</code></p>
+<p><strong>搜索：</strong><code>SettingsPath</code></p>
+<div class="code-block">
+<div class="code-header"><span class="lang">C# — AppSettings.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>// 设置文件存储路径（默认：%APPDATA%/AudioCalculator/settings.json）
+private static readonly string SettingsPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    "AudioCalculator", "settings.json");</code></pre>
+</div>
+
+<h3>5.2 支持的音频格式</h3>
+<p><strong>文件：</strong><code>MainWindow.xaml.cs</code>，约第 22 行</p>
+<p><strong>搜索：</strong><code>SupportedExtensions</code></p>
+<div class="code-block">
+<div class="code-header"><span class="lang">C# — MainWindow.xaml.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>// 支持的音频/视频文件扩展名列表（需要新增格式在这里添加）
+private static readonly string[] SupportedExtensions = 
+{ 
+    ".mp3", ".wav", ".flac", ".m4a", ".ogg", ".wma", ".aac", 
+    ".aiff", ".ape", ".opus", ".webm", ".mp4", ".mkv" 
+};</code></pre>
+</div>
+
+<h3>5.3 截图样式</h3>
+<p><strong>文件：</strong><code>AppSettings.cs</code></p>
+<p><strong>搜索：</strong><code>ScreenshotStyle</code></p>
+<div class="code-block">
+<div class="code-header"><span class="lang">C# — AppSettings.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>// 截图样式：可选值 "Gradient"（渐变）、"Dark"（暗色）、"Simple"（简约白色）
+public string ScreenshotStyle { get; set; } = "Gradient";</code></pre>
+</div>
+<p>截图样式的具体实现在 <code>MainWindow.xaml.cs</code> 中，搜索 <code>GenerateGradientScreenshot</code>、<code>GenerateDarkScreenshot</code>、<code>GenerateSimpleScreenshot</code> 三个方法。</p>
+
+<h3>5.4 官网地址</h3>
+<p><strong>文件：</strong><code>MainWindow.xaml.cs</code>，搜索 <code>xiaoxu.vip</code></p>
+<div class="code-block">
+<div class="code-header"><span class="lang">C# — MainWindow.xaml.cs</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>// 点击 Logo 打开的网址
+FileName = "https://www.xiaoxu.vip/ypsc"</code></pre>
+</div>
+
+<h3>5.5 默认单价</h3>
+<p><strong>文件：</strong><code>MainWindow.xaml</code>，搜索 <code>PriceInput</code></p>
+<div class="code-block">
+<div class="code-header"><span class="lang">XAML — MainWindow.xaml</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>&lt;!-- 默认单价（修改 Text 的值即可） --&gt;
+&lt;TextBox x:Name="PriceInput" Text="100" ... /&gt;</code></pre>
+</div>
+
+<h2 id="sec6">六、UI 样式修改</h2>
+
+<h3>6.1 全局颜色定义</h3>
+<p><strong>文件：</strong><code>App.xaml</code></p>
+<p>所有颜色集中定义在 <code>Application.Resources</code> 中，修改这里即可全局生效：</p>
+<div class="code-block">
+<div class="code-header"><span class="lang">XAML — App.xaml 颜色定义</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>&lt;Color x:Key="PrimaryColor"&gt;#6366F1&lt;/Color&gt;          &lt;!-- 主色调（紫色） --&gt;
+&lt;Color x:Key="PrimaryHoverColor"&gt;#4F46E5&lt;/Color&gt;     &lt;!-- 主色调悬停 --&gt;
+&lt;Color x:Key="SecondaryColor"&gt;#EC4899&lt;/Color&gt;        &lt;!-- 辅助色（粉色） --&gt;
+&lt;Color x:Key="AccentColor"&gt;#10B981&lt;/Color&gt;           &lt;!-- 强调色（绿色，用于金额） --&gt;
+&lt;Color x:Key="BackgroundColor"&gt;#F8FAFC&lt;/Color&gt;       &lt;!-- 背景色 --&gt;
+&lt;Color x:Key="CardColor"&gt;#FFFFFF&lt;/Color&gt;             &lt;!-- 卡片背景 --&gt;
+&lt;Color x:Key="TextColor"&gt;#1E293B&lt;/Color&gt;             &lt;!-- 主文字颜色 --&gt;
+&lt;Color x:Key="TextSecondaryColor"&gt;#64748B&lt;/Color&gt;    &lt;!-- 次要文字颜色 --&gt;
+&lt;Color x:Key="BorderColor"&gt;#E2E8F0&lt;/Color&gt;           &lt;!-- 边框颜色 --&gt;</code></pre>
+</div>
+
+<h3>6.2 按钮样式</h3>
+<p><strong>文件：</strong><code>App.xaml</code></p>
+<p>定义了三种按钮样式，搜索对应 Key 即可修改：</p>
+<table>
+<tr><th>样式 Key</th><th>用途</th><th>外观</th></tr>
+<tr><td><code>PrimaryButton</code></td><td>主要操作按钮（截图）</td><td>紫色渐变背景，白色文字</td></tr>
+<tr><td><code>SecondaryButton</code></td><td>次要操作按钮（选文件、清空）</td><td>白色背景，灰色边框</td></tr>
+<tr><td><code>IconButton</code></td><td>图标按钮</td><td>透明背景，悬停灰色</td></tr>
+</table>
+
+<h3>6.3 窗口尺寸</h3>
+<p><strong>文件：</strong><code>MainWindow.xaml</code>，第一行 <code>&lt;Window&gt;</code> 标签</p>
+<div class="code-block">
+<div class="code-header"><span class="lang">XAML — MainWindow.xaml</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>&lt;!-- 窗口尺寸（修改 Height 和 Width） --&gt;
+Height="620" Width="420"
+ResizeMode="CanMinimize"    &lt;!-- 不允许拖拽调整大小 --&gt;</code></pre>
+</div>
+
+<h3>6.4 标题栏渐变色</h3>
+<p><strong>文件：</strong><code>MainWindow.xaml</code>，搜索 <code>LinearGradientBrush</code></p>
+<div class="code-block">
+<div class="code-header"><span class="lang">XAML — 标题栏渐变色</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>&lt;LinearGradientBrush StartPoint="0,0" EndPoint="1,1"&gt;
+    &lt;GradientStop Color="#6366F1" Offset="0"/&gt;     &lt;!-- 左上角颜色 --&gt;
+    &lt;GradientStop Color="#8B5CF6" Offset="0.5"/&gt;   &lt;!-- 中间颜色 --&gt;
+    &lt;GradientStop Color="#EC4899" Offset="1"/&gt;      &lt;!-- 右下角颜色 --&gt;
+&lt;/LinearGradientBrush&gt;</code></pre>
+</div>
+
+<h2 id="sec7">七、NuGet 依赖包</h2>
+<table>
+<tr><th>包名</th><th>版本</th><th>用途</th></tr>
+<tr><td><code>TagLibSharp</code></td><td>2.3.0</td><td>读取音频文件元数据（时长、格式等）</td></tr>
+</table>
+
+<div class="tip tip-info">
+<strong>💡 提示</strong>
+本项目依赖非常少，只有一个 TagLibSharp。同时还使用了 Windows Shell API（COM 接口）来获取与资源管理器一致的音频时长，这部分不需要额外 NuGet 包。
+</div>
+
+<p>如需更新依赖版本：</p>
+<div class="code-block">
+<div class="code-header"><span class="lang">Shell — 更新 NuGet 包</span><button class="copy-btn" onclick="copyCode(this)">📋 复制</button></div>
+<pre><code>dotnet add package TagLibSharp --version 最新版本号</code></pre>
+</div>
+
+<h2 id="sec8">八、完整发版流程</h2>
+<div class="card">
+<ol class="steps">
+<li><strong>修改版本号</strong> — 按照第二节的检查清单，同步修改 2 个位置的版本号</li>
+<li><strong>测试功能</strong> — 在 IDE 中运行调试，确认功能正常（拖拽文件、计费、截图、右键菜单）</li>
+<li><strong>编译轻量版</strong> — 执行第三节的轻量版编译命令，检查 <code>publish-lite/AudioCalculator.exe</code></li>
+<li><strong>编译完整版</strong> — 执行第三节的完整版编译命令，检查 <code>publish-full/AudioCalculator.exe</code></li>
+<li><strong>测试编译产物</strong> — 双击运行编译出的 exe，确认标题栏版本号正确、功能正常</li>
+<li><strong>打包分发</strong> — 将 exe 文件压缩为 zip，上传到分发渠道</li>
+</ol>
+</div>
+
+<h2 id="sec9">九、常见问题 FAQ</h2>
+
+<h3>Q1: 编译报错 "找不到 .NET SDK"</h3>
+<div class="tip tip-success">
+<strong>✅ 解决方案</strong>
+确认已安装 .NET 8.0 SDK，运行 <code>dotnet --version</code> 检查。如果已安装但仍报错，尝试重启终端或检查 PATH 环境变量。
+</div>
+
+<h3>Q2: 右键菜单添加失败</h3>
+<div class="tip tip-success">
+<strong>✅ 解决方案</strong>
+需要管理员权限。右键点击 exe → "以管理员身份运行"，然后再点击"添加右键"按钮。也可以直接双击 <code>RegisterContextMenu.reg</code> 注册表脚本。
+</div>
+
+<h3>Q3: 截图功能不工作</h3>
+<div class="tip tip-success">
+<strong>✅ 解决方案</strong>
+截图功能使用 WPF 的 <code>RenderTargetBitmap</code> 渲染，不依赖外部库。如果剪贴板复制失败，可能是其他程序占用了剪贴板，关闭剪贴板管理工具后重试。
+</div>
+
+<h3>Q4: 音频时长与资源管理器显示不一致</h3>
+<div class="tip tip-success">
+<strong>✅ 解决方案</strong>
+程序优先使用 Windows Shell API 获取时长（与资源管理器一致），如果 Shell API 失败才回退到 TagLib。如果仍有差异，可能是文件元数据损坏。
+</div>
+
+<h3>Q5: 轻量版和完整版有什么功能区别？</h3>
+<div class="tip tip-success">
+<strong>✅ 解答</strong>
+功能完全一致，唯一区别是：轻量版不包含 .NET 运行时（体积小，需要用户已安装 .NET 8），完整版自带运行时（体积大，开箱即用）。标题栏会显示对应的版本类型。
+</div>
+
+<h2 id="sec10">十、关键文件速查表</h2>
+<table>
+<tr><th>需求</th><th>文件</th><th>搜索关键词</th></tr>
+<tr><td>修改版本号</td><td><code>MainWindow.xaml.cs</code></td><td><code>Version =</code></td></tr>
+<tr><td>修改编译版本号</td><td><code>AudioCalculator.csproj</code></td><td><code>&lt;Version&gt;</code></td></tr>
+<tr><td>修改全局颜色</td><td><code>App.xaml</code></td><td><code>PrimaryColor</code></td></tr>
+<tr><td>修改按钮样式</td><td><code>App.xaml</code></td><td><code>PrimaryButton</code></td></tr>
+<tr><td>修改窗口尺寸</td><td><code>MainWindow.xaml</code></td><td><code>Height=</code></td></tr>
+<tr><td>修改支持的音频格式</td><td><code>MainWindow.xaml.cs</code></td><td><code>SupportedExtensions</code></td></tr>
+<tr><td>修改截图样式</td><td><code>AppSettings.cs</code></td><td><code>ScreenshotStyle</code></td></tr>
+<tr><td>修改设置存储路径</td><td><code>AppSettings.cs</code></td><td><code>SettingsPath</code></td></tr>
+<tr><td>修改默认单价</td><td><code>MainWindow.xaml</code></td><td><code>PriceInput</code></td></tr>
+<tr><td>修改官网地址</td><td><code>MainWindow.xaml.cs</code></td><td><code>xiaoxu.vip</code></td></tr>
+<tr><td>右键菜单注册逻辑</td><td><code>MainWindow.xaml.cs</code></td><td><code>AddContextMenu_Click</code></td></tr>
+<tr><td>打赏窗口</td><td><code>DonateWindow.xaml</code></td><td>—</td></tr>
+<tr><td>收款码图片</td><td><code>sk.jpg</code></td><td>—</td></tr>
+</table>
+
+</div>
+
+<script>
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre code');
+    const text = pre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✅ 已复制';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.textContent = '📋 复制';
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
+</script>
+
+</body>
+</html>

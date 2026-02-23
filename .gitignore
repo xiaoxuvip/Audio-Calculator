@@ -1,0 +1,22 @@
+# .NET 构建产物
+bin/
+obj/
+publish-full/
+publish-lite/
+
+# Rust 构建产物
+rust-version/target/
+
+# 编译后的可执行文件
+*.exe
+
+# IDE 相关
+.vs/
+*.user
+*.suo
+
+# macOS
+.DS_Store
+
+# 其他
+*.pdb

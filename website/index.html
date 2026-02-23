@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频时长统计 - 专业音频计费工具</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --accent: #EC4899;
+            --text: #1F2937;
+            --text-secondary: #6B7280;
+            --bg: #F9FAFB;
+            --card: #FFFFFF;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            margin: 0 auto 32px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .hero .tagline {
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+        }
+        
+        .hero .version {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            color: var(--primary);
+            padding: 18px 48px;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        
+        .download-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .hero-info {
+            margin-top: 32px;
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .hero-info span {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            color: var(--text);
+            margin-bottom: 16px;
+        }
+        
+        .section-title p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+        }
+        
+        .feature-card {
+            background: var(--card);
+            padding: 40px 32px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 24px;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        
+        .feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        
+        /* How to Use */
+        .howto {
+            background: linear-gradient(180deg, #F3F4F6 0%, var(--bg) 100%);
+            padding: 100px 20px;
+        }
+        
+        .howto-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .step {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            background: var(--card);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .step-content h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        
+        .step-content p {
+            color: var(--text-secondary);
+        }
+        
+        /* Changelog Section */
+        .changelog {
+            padding: 100px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .changelog-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .changelog-item {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .changelog-item.latest {
+            border-left-color: var(--accent);
+            background: linear-gradient(135deg, #FDF4FF, #FAE8FF);
+        }
+        
+        .changelog-item .version-tag {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .changelog-item.latest .version-tag {
+            background: var(--accent);
+        }
+        
+        .changelog-item p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+        
+        /* Notice Section */
+        .notice {
+            padding: 80px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .notice-card {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border-radius: 20px;
+            padding: 40px;
+            border-left: 6px solid #F59E0B;
+        }
+        
+        .notice-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            color: #92400E;
+            margin-bottom: 20px;
+        }
+        
+        .notice-card ul {
+            list-style: none;
+            color: #78350F;
+        }
+        
+        .notice-card li {
+            padding: 10px 0;
+            padding-left: 28px;
+            position: relative;
+        }
+        
+        .notice-card li::before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+        }
+        
+        /* Specs */
+        .specs {
+            background: var(--text);
+            color: white;
+            padding: 80px 20px;
+        }
+        
+        /* Version Choice */
+        .version-choice {
+            padding: 80px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .version-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        
+        .version-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            position: relative;
+            border: 2px solid transparent;
+        }
+        
+        .version-card.full {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+        }
+        
+        .version-card.lite {
+            border-color: #E5E7EB;
+        }
+        
+        .version-badge {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .version-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        
+        .version-size {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .version-card.lite .version-size {
+            color: var(--text-secondary);
+        }
+        
+        .version-card ul {
+            list-style: none;
+        }
+        
+        .version-card li {
+            padding: 8px 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        .version-card li a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .version-card li a:hover {
+            text-decoration: underline;
+        }
+        
+        .lite-notice {
+            margin-top: 40px;
+            background: #FEF3C7;
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            border: 2px solid #FCD34D;
+        }
+        
+        .lite-notice h3 {
+            font-size: 1.2rem;
+            color: #92400E;
+            margin-bottom: 16px;
+        }
+        
+        .lite-notice p {
+            color: #78350F;
+            margin-bottom: 16px;
+        }
+        
+        .runtime-screenshot {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            margin: 20px 0;
+        }
+        
+        .lite-tip {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        
+        .lite-tip strong {
+            color: var(--primary);
+        }
+        
+        .specs-content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .specs h2 {
+            font-size: 2rem;
+            margin-bottom: 40px;
+        }
+        
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 32px;
+        }
+        
+        .spec-item h4 {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+        
+        .spec-item p {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hero .tagline {
+                font-size: 1.1rem;
+            }
+            
+            .hero-info {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .step {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .section-title h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="logo">🎵</div>
+            <h1>音频时长统计</h1>
+            <p class="tagline">专业的音频时长计算与费用结算工具</p>
+            <span class="version">v1.3 · Windows 10/11</span>
+            <br><br>
+            <a href="https://pan.xiaoxu.vip/s/C9x9-b14xh" class="download-btn" target="_blank">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                免费下载
+            </a>
+            <div class="hero-info">
+                <span>📦 完整版 152MB / 轻量版 2MB</span>
+                <span>🚀 无需安装</span>
+                <span>💯 完全免费</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="section-title">
+            <h2>核心功能</h2>
+            <p>为音频工作者量身打造的效率工具</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⏱️</div>
+                <h3>精准时长统计</h3>
+                <p>支持 MP3、WAV、FLAC、M4A、OGG、AAC 等主流音频格式，自动计算总时长。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>智能费用计算</h3>
+                <p>支持按小时或分钟计费，自定义单价，实时显示总费用，结算更便捷。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📷</div>
+                <h3>一键截图分享</h3>
+                <p>生成精美的结算单截图，包含文件列表、时长、费用等信息，直接复制到剪贴板。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🖱️</div>
+                <h3>右键菜单集成</h3>
+                <p>一键添加到 Windows 右键菜单，选中文件或文件夹即可快速统计。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📂</div>
+                <h3>拖拽操作</h3>
+                <p>支持直接拖拽文件或文件夹到窗口，批量添加音频文件。</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3>智能排序</h3>
+                <p>文件列表自动按名称排序，清晰展示每个文件的时长信息。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How to Use -->
+    <section class="howto">
+        <div class="howto-content">
+            <div class="section-title">
+                <h2>使用方法</h2>
+                <p>三种方式，灵活选择</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>拖拽添加</h3>
+                        <p>直接将音频文件或包含音频的文件夹拖拽到软件窗口中，即可自动识别并统计。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>右键菜单</h3>
+                        <p>点击软件右上角「添加右键」按钮（需管理员权限），之后在文件或文件夹上右键即可看到「音频时长统计」选项。</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>手动选择</h3>
+                        <p>点击底部「文件」或「文件夹」按钮，通过对话框选择要统计的音频。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Version Choice -->
+    <section class="version-choice">
+        <div class="section-title">
+            <h2>版本选择</h2>
+            <p>根据需求选择适合的版本</p>
+        </div>
+        <div class="version-grid">
+            <div class="version-card full">
+                <div class="version-badge">推荐</div>
+                <h3>🎯 完整版</h3>
+                <div class="version-size">152 MB</div>
+                <ul>
+                    <li>✅ 开箱即用，无需安装依赖</li>
+                    <li>✅ 包含 .NET 8 运行时</li>
+                    <li>✅ 适合大多数用户</li>
+                </ul>
+            </div>
+            <div class="version-card lite">
+                <h3>⚡ 轻量版</h3>
+                <div class="version-size">约 2 MB</div>
+                <ul>
+                    <li>📦 体积小巧</li>
+                    <li>⚠️ 需要安装 .NET 8 Desktop Runtime</li>
+                    <li>🔗 <a href="https://dotnet.microsoft.com/download/dotnet/8.0" target="_blank">下载运行时</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 轻量版提示说明 -->
+        <div class="lite-notice">
+            <h3>💡 轻量版使用说明</h3>
+            <p>如果运行轻量版时看到以下提示，说明您的电脑尚未安装 .NET 8 运行时：</p>
+            <img src="./runtime-prompt.png" alt="运行时提示" class="runtime-screenshot">
+            <p class="lite-tip">点击弹窗中的 <strong>「Download it now」</strong> 按钮即可跳转到微软官网下载安装运行时，安装完成后即可正常使用。</p>
+        </div>
+    </section>
+
+    <!-- Changelog -->
+    <section class="changelog">
+        <div class="section-title">
+            <h2>更新日志</h2>
+            <p>持续优化，不断进步</p>
+        </div>
+        <div class="changelog-list">
+            <div class="changelog-item latest">
+                <span class="version-tag">v1.3</span>
+                <p>时长显示格式优化为 00:00:00（时:分:秒），更清晰直观。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v1.2</span>
+                <p>修复单文件选择时错误弹出提示的问题；窗口标题区分完整版/轻量版。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v1.1</span>
+                <p>新增轻量版支持（约2MB），需用户自行安装 .NET 8 Desktop Runtime；升级框架至 .NET 8。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v1.0</span>
+                <p>软件增加了左上角图标的超链接，指向软件发布页，方便用户及时更新最新版。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.9</span>
+                <p>优化右上角按钮样式，改为现代商务风格；标题下方增加版本提示信息。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.8</span>
+                <p>新增应用图标（logo.ico），统一软件窗口、exe文件和右键菜单图标显示。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.7</span>
+                <p>优化界面布局，右上角设置按钮改为文字按钮；截图中"总费用"改为"总计金额"；信息栏改为单行显示。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.6</span>
+                <p>增加超过100个文件的Windows系统限制提示，建议用户在文件夹上右键操作。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.5</span>
+                <p>优化拖拽区域交互，提示图标和文字不再阻挡拖拽操作；发布为单exe便携版。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.4</span>
+                <p>取消设置界面，截图样式默认使用渐变风格；增加版本号显示和开发者署名。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.3</span>
+                <p>优化右键菜单多文件支持，使用命名管道实现单实例运行；支持选择超过15个文件。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.2</span>
+                <p>新增截图功能，支持三种样式（简约/渐变/暗黑）；文件列表按名称自动排序。</p>
+            </div>
+            <div class="changelog-item">
+                <span class="version-tag">v0.1</span>
+                <p>初始版本发布，实现基础的音频时长统计、费用计算、右键菜单集成和拖拽添加功能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Notice -->
+    <section class="notice">
+        <div class="notice-card">
+            <h3>⚡ 注意事项</h3>
+            <ul>
+                <li><strong>Windows 系统限制：</strong>通过右键菜单选择超过 100 个文件时，系统只能传递部分文件。建议在文件夹上右键，软件会自动扫描文件夹内所有音频。</li>
+                <li><strong>管理员权限：</strong>添加/移除右键菜单需要管理员权限，请右键以管理员身份运行程序。</li>
+                <li><strong>图标刷新：</strong>添加右键菜单后，图标可能需要重启资源管理器或重新登录才能显示。</li>
+                <li><strong>首次运行：</strong>由于是单文件便携版，首次运行可能需要几秒钟解压运行时环境。</li>
+                <li><strong>文件大小说明：</strong>完整版 152MB 包含运行环境，开箱即用；轻量版约 2MB，需要安装 .NET 8 Desktop Runtime。</li>
+                <li><strong>轻量版运行时：</strong>如选择轻量版，请先安装 <a href="https://dotnet.microsoft.com/download/dotnet/8.0" target="_blank" style="color:#92400E">.NET 8 Desktop Runtime</a>（选择 Windows x64 版本）。</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Specs -->
+    <section class="specs">
+        <div class="specs-content">
+            <h2>技术规格</h2>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <h4>运行环境</h4>
+                    <p>Windows 10/11 (64位)</p>
+                </div>
+                <div class="spec-item">
+                    <h4>开发框架</h4>
+                    <p>.NET 8 + WPF</p>
+                </div>
+                <div class="spec-item">
+                    <h4>文件大小</h4>
+                    <p>完整版 152MB / 轻量版 2MB</p>
+                </div>
+                <div class="spec-item">
+                    <h4>支持格式</h4>
+                    <p>MP3/WAV/FLAC/M4A/OGG/AAC 等</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 音频时长统计 · 由 <a href="https://www.xiaoxu.vip" target="_blank">Xiaoxu</a> 开发</p>
+    </footer>
+</body>
+</html>

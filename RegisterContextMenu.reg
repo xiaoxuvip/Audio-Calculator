@@ -1,0 +1,22 @@
+Windows Registry Editor Version 5.00
+
+; 音频时长统计 - 右键菜单注册（支持多选超过15个文件）
+; 使用方法：双击此文件导入注册表
+; 注意：请先将 AudioCalculator.exe 复制到 %LOCALAPPDATA%\AudioCalculator\ 目录
+
+; 为所有文件添加右键菜单
+[HKEY_CLASSES_ROOT\*\shell\AudioCalculator]
+@="音频时长统计"
+"Icon"="\"%LOCALAPPDATA%\\AudioCalculator\\AudioCalculator.exe\""
+"MultiSelectModel"="Player"
+
+[HKEY_CLASSES_ROOT\*\shell\AudioCalculator\command]
+@="\"%LOCALAPPDATA%\\AudioCalculator\\AudioCalculator.exe\" \"%1\""
+
+; 为文件夹添加右键菜单
+[HKEY_CLASSES_ROOT\Directory\shell\AudioCalculator]
+@="音频时长统计"
+"Icon"="\"%LOCALAPPDATA%\\AudioCalculator\\AudioCalculator.exe\""
+
+[HKEY_CLASSES_ROOT\Directory\shell\AudioCalculator\command]
+@="\"%LOCALAPPDATA%\\AudioCalculator\\AudioCalculator.exe\" \"%1\""

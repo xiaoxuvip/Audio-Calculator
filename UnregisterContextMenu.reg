@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+; 音频时长统计 - 移除右键菜单
+; 使用方法：双击此文件移除右键菜单
+
+[-HKEY_CLASSES_ROOT\*\shell\AudioCalculator]
+[-HKEY_CLASSES_ROOT\Directory\shell\AudioCalculator]
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\AudioCalculator]
